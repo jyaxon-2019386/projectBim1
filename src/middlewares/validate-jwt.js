@@ -34,3 +34,33 @@ export const isAdmin = async(req, res, next)=>{
         return res.status(403).send({message: 'Unauthorized role'})
     }
 }
+
+export const isClient = async(req, res, next)=>{
+    try{
+        let { user } = req
+        if(!user || user.role !== 'CLIENT_ROLE') return res.status(403).send({message: `You dont have access`})
+        next()
+    }catch(err){
+        console.error(err)
+        return res.status(403).send({message: 'Unauthorized role'})
+    }
+}
+
+export const authorizeDeleteUser = (req, res, next) => {
+    try {
+        // Obtener el ID del usuario a eliminar y el ID del usuario autenticado
+        const userIdToDelete = req.params.id;
+        const authenticatedUserId = req.user._id.toString();
+        
+        // Verificar si el usuario autenticado tiene permiso para eliminar el perfil
+        if (userIdToDelete === authenticatedUserId) {
+            // El usuario puede eliminar su propio perfil
+            next(); // Continuar con la siguiente función en la ruta
+        } else {
+            return res.status(403).send({ message: 'No tienes permiso para eliminar este perfil' }); // status 403 Forbidden
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ message: 'Error de autorización' }); // status 500 Internal Server Error
+    }
+}

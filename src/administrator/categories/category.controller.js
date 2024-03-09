@@ -1,6 +1,7 @@
 'use strict'
 
 import Category from './category.model.js'
+import Product from '../products/product.model.js'
 import { checkUpdate } from '../../utils/validator.js'
 
 export const test = (req, res) => {
@@ -53,15 +54,36 @@ export const update = async (req, res) => {
 }
 
 // Delete a category
-export const deleteC = async(req, res)=>{
-    try{
-        let { id } = req.params
-        let deletedCategory = await Category.deleteOne({_id: id})
-        if(deletedCategory.deletedCount === 0) return res.status(404).send({message: 'Category not found and not deleted'})
-        return res.send({message: 'Deleted category successfully! 😀'})
-    }catch(err){
-        console.error(err)
-        return res.status(404).send({message: 'Error deleting category!'})
+export const deleteC = async (req, res) => {
+    try {
+        let { id } = req.params;
+        const category = await Category.findById(id);
+
+        if (!category) {
+            return res.status(404).send({ message: 'Category not found and not deleted' });
+        }
+
+        const productsToUpdate = await Product.find({ category: id });
+
+        if (productsToUpdate.length > 0) {
+            let defaultCategory = await Category.findOne({ name: 'Default' });
+
+            if (!defaultCategory) {
+                defaultCategory = await Category.create({ name: 'Default' });
+            }
+
+            for (const product of productsToUpdate) {
+                product.category = defaultCategory._id;
+                await product.save();
+            }
+        }
+
+        await Category.deleteOne({ _id: id });
+
+        return res.send({ message: 'Deleted category successfully! 😀' });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ message: 'Error deleting category!' });
     }
 }
 

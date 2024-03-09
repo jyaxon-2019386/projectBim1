@@ -16,12 +16,16 @@ const productSchema = Schema({
   },
   stock:{
     type: String,
-    required: true
+    required: true,
+    validate: {
+      validator: function(value) {
+        return Number.isInteger(Number(value));
+      },
+      message: 'Stock must be an integer'
+    }
   }
 }, {
-  versionKey: false //Desahabilitar el __v (version del documento)
-}
-)
+  versionKey: false // Deshabilitar el __v (versión del documento)
+});
 
-export default model('product', productSchema)
-
+export default model('product', productSchema);

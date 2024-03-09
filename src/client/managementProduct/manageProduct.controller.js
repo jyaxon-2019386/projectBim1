@@ -55,16 +55,4 @@ export const filterByCategory = async (req, res) => {
         return res.status(500).send({ message: 'Error filtering catalogue by category', error: err });
     }
 }
-export const viewMostSoldProducts = async (req, res) => {
-    try {
-        const mostSoldProducts = await Product.find({ stock: { $gte: 10 } })
-            .populate({ path: 'category', select: 'name -_id' })
-            .sort({ stock: -1 })
-            .limit(100);
 
-        return res.send({ mostSoldProducts });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).send({ message: 'Error getting most sold products', error: err });
-    }
-}

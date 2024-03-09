@@ -2,6 +2,7 @@
 
 import Product from './product.model.js'
 import Category from '../categories/category.model.js'
+import Cart from '../products/product.model.js'
 import { checkUpdate } from '../../utils/validator.js'
 
 export const test = (req, res) => {
@@ -13,6 +14,11 @@ export const test = (req, res) => {
 export const save = async (req, res) => {
     try {
         const { name, price, category, stock } = req.body;
+
+        // Validar que el stock sea un número entero
+        if (!Number.isInteger(Number(stock))) {
+            return res.status(400).send({ message: 'Stock must be an integer' });
+        }
 
         const products = new Product({ name, price, category, stock });
         await products.save();
@@ -96,14 +102,29 @@ export const deleteP = async(req, res)=>{
 }
 
 // Search a product
-export const search = async(req, res)=>{
-    try{
-        let { search } = req.body
-        let product = await Product.find({name: search}).populate({path: 'category', select: 'name -_id'})
-        if(!product) return res.status(404).send({message: 'Product not found! 😥'})
-        return res.send({message: 'Product found! 😀', product})
-    }catch(err){
-        console.error(err)
-        return res.status(500).send({message: 'Error searching products'})
+export const search = async (req, res) => {
+    try {
+        let { search } = req.body;
+        let products = await Product.find({ name: { $regex: new RegExp(search, 'i') } }).populate({ path: 'category', select: 'name -_id' });
+        
+        if(products.length === 0) {
+            return res.status(404).send({ message: 'Product not found! 😥' });
+        }
+        
+        return res.send({ message: 'Products found! 😀', products });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ message: 'Error searching products' });
+    }
+}
+
+export const getTopSellingProducts = async (req, res) => {
+    try {
+        const lowStockProducts = await Product.find().populate({path: 'category', select: 'name -_id'}).sort({ stock: 1 }).limit(5);
+        
+        return res.status(200).json({ lowStockProducts });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ message: 'Error retrieving low stock products', error });
     }
 }
